@@ -2,6 +2,7 @@
  * Remmina - The GTK+ Remote Desktop Client
  * Copyright (C) 2011 Vic Lee
  * Copyright (C) 2014-2015 Antenore Gatta, Fabio Castelli, Giovanni Panozzo
+ * Copyright (C) 2015-2017 Antenore Gatta, Giovanni Panozzo
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -33,42 +34,41 @@
  *
  */
 
-#include "config.h"
 #include "glibsecret_plugin.h"
-#include <gtk/gtk.h>
+#include "config.h"
 #include <glib.h>
+#include <gtk/gtk.h>
 #include <libsecret/secret.h>
 #include <remmina/plugin.h>
 
-static RemminaPluginService *remmina_plugin_service = NULL;
+static RemminaPluginService* remmina_plugin_service = NULL;
 
-static SecretSchema remmina_file_secret_schema =
-{ "org.remmina.Password", SECRET_SCHEMA_NONE,
-{
-{ "filename", SECRET_SCHEMA_ATTRIBUTE_STRING },
-{ "key", SECRET_SCHEMA_ATTRIBUTE_STRING },
-{ NULL, 0 } } };
-
+static SecretSchema remmina_file_secret_schema = {
+	"org.remmina.Password",
+	SECRET_SCHEMA_NONE, {
+		{ "filename", SECRET_SCHEMA_ATTRIBUTE_STRING },
+		{ "key", SECRET_SCHEMA_ATTRIBUTE_STRING },
+		{ NULL, 0 }
+	}
+};
 
 #ifdef LIBSECRET_VERSION_0_18
 static SecretService* secretservice;
 static SecretCollection* defaultcollection;
 #endif
 
-static void  remmina_plugin_glibsecret_unlock_secret_service()
+static void remmina_plugin_glibsecret_unlock_secret_service()
 {
 	TRACE_CALL("remmina_plugin_glibsecret_unlock_secret_service");
 
 #ifdef LIBSECRET_VERSION_0_18
 
-	GError *error = NULL;
+	GError* error = NULL;
 	GList *objects, *ul;
 	gchar* lbl;
 
-	if (secretservice && defaultcollection)
-	{
-		if (secret_collection_get_locked(defaultcollection))
-		{
+	if (secretservice && defaultcollection) {
+		if (secret_collection_get_locked(defaultcollection)) {
 			lbl = secret_collection_get_label(defaultcollection);
 			remmina_plugin_service->log_printf("[glibsecret] requesting unlock of the default '%s' collection\n", lbl);
 			objects = g_list_append(NULL, defaultcollection);
@@ -81,97 +81,94 @@ static void  remmina_plugin_glibsecret_unlock_secret_service()
 	return;
 }
 
-void remmina_plugin_glibsecret_store_password(RemminaFile *remminafile, const gchar *key, const gchar *password)
+void remmina_plugin_glibsecret_store_password(RemminaFile* remminafile, const gchar* key, const gchar* password)
 {
 	TRACE_CALL("remmina_plugin_glibsecret_store_password");
-	GError *r = NULL;
-	const gchar *path;
-	gchar *s;
+	GError* r = NULL;
+	const gchar* path;
+	gchar* s;
 
 	remmina_plugin_glibsecret_unlock_secret_service();
 
 	path = remmina_plugin_service->file_get_path(remminafile);
 	s = g_strdup_printf("Remmina: %s - %s", remmina_plugin_service->file_get_string(remminafile, "name"), key);
 	secret_password_store_sync(&remmina_file_secret_schema, SECRET_COLLECTION_DEFAULT, s, password,
-			NULL, &r, "filename", path, "key", key, NULL);
+	    NULL, &r, "filename", path, "key", key, NULL);
 	g_free(s);
-	if (r == NULL)
-	{
+	if (r == NULL) {
 		remmina_plugin_service->log_printf("[glibsecret] password saved for file %s\n", path);
-	}
-	else
-	{
+	} else {
 		remmina_plugin_service->log_printf("[glibsecret] password cannot be saved for file %s\n", path);
-		g_error_free (r);
+		g_error_free(r);
 	}
 }
 
 gchar*
-remmina_plugin_glibsecret_get_password(RemminaFile *remminafile, const gchar *key)
+remmina_plugin_glibsecret_get_password(RemminaFile* remminafile, const gchar* key)
 {
 	TRACE_CALL("remmina_plugin_glibsecret_get_password");
-	GError *r = NULL;
-	const gchar *path;
-	gchar *password;
-	gchar *p;
+	GError* r = NULL;
+	const gchar* path;
+	gchar* password;
+	gchar* p;
 
 	remmina_plugin_glibsecret_unlock_secret_service();
 
 	path = remmina_plugin_service->file_get_path(remminafile);
 	password = secret_password_lookup_sync(&remmina_file_secret_schema, NULL, &r, "filename", path, "key", key, NULL);
-	if (r == NULL)
-	{
+	if (r == NULL) {
 		remmina_plugin_service->log_printf("[glibsecret] found password for file %s\n", path);
 		p = g_strdup(password);
 		secret_password_free(password);
 		return p;
-	}
-	else
-	{
+	} else {
 		remmina_plugin_service->log_printf("[glibsecret] password cannot be found for file %s\n", path);
 		return NULL;
 	}
 }
 
-void remmina_plugin_glibsecret_delete_password(RemminaFile *remminafile, const gchar *key)
+void remmina_plugin_glibsecret_delete_password(RemminaFile* remminafile, const gchar* key)
 {
 	TRACE_CALL("remmina_plugin_glibsecret_delete_password");
-	GError *r = NULL;
-	const gchar *path;
+	GError* r = NULL;
+	const gchar* path;
 
 	remmina_plugin_glibsecret_unlock_secret_service();
 
 	path = remmina_plugin_service->file_get_path(remminafile);
 	secret_password_clear_sync(&remmina_file_secret_schema, NULL, &r, "filename", path, "key", key, NULL);
-	if (r == NULL)
-	{
+	if (r == NULL) {
 		remmina_plugin_service->log_printf("[glibsecret] password deleted for file %s\n", path);
-	}
-	else
-	{
+	} else {
 		remmina_plugin_service->log_printf("[glibsecret] password cannot be deleted for file %s\n", path);
 	}
 }
 
-static RemminaSecretPlugin remmina_plugin_glibsecret =
-{ REMMINA_PLUGIN_TYPE_SECRET, "glibsecret", "GNOME libsecret", NULL, VERSION,
-
-TRUE, remmina_plugin_glibsecret_store_password, remmina_plugin_glibsecret_get_password, remmina_plugin_glibsecret_delete_password };
+static RemminaSecretPlugin remmina_plugin_glibsecret = {
+	REMMINA_PLUGIN_TYPE_SECRET,                // Type
+	"glibsecret",                              // Name
+	"GNOME libsecret",                         // Description
+	NULL,                                      // Translation domain
+	VERSION,                                   // Version number
+	TRUE,                                      // ?
+	remmina_plugin_glibsecret_store_password,  // Store password function
+	remmina_plugin_glibsecret_get_password,    // Get password function
+	remmina_plugin_glibsecret_delete_password  // Delete password function
+};
 
 G_MODULE_EXPORT gboolean
-remmina_plugin_entry(RemminaPluginService *service)
+remmina_plugin_entry(RemminaPluginService* service)
 {
 	TRACE_CALL("remmina_plugin_entry");
 
 	remmina_plugin_service = service;
 
-	if (!service->register_plugin((RemminaPlugin *) &remmina_plugin_glibsecret))
-	{
+	if (!service->register_plugin((RemminaPlugin*)&remmina_plugin_glibsecret)) {
 		return FALSE;
 	}
 
 #ifdef LIBSECRET_VERSION_0_18
-	GError *error;
+	GError* error;
 	error = NULL;
 	secretservice = secret_service_get_sync(SECRET_SERVICE_LOAD_COLLECTIONS, NULL, &error);
 	if (error) {
@@ -188,4 +185,3 @@ remmina_plugin_entry(RemminaPluginService *service)
 
 	return TRUE;
 }
-
