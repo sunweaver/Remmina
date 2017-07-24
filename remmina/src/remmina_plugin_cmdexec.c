@@ -45,7 +45,7 @@
 
 #define GET_OBJECT(object_name) gtk_builder_get_object(builder, object_name)
 
-static void wait_for_child(GPid pid, gint script_retval, gpointer data)
+static void remmina_plugin_cmdexec_spinner (GPid pid, gint script_retval, gpointer data)
 {
 	PCon_Spinner *pcspinner = (PCon_Spinner *) data;
 
@@ -119,7 +119,9 @@ GtkDialog* remmina_plugin_cmdexec_new(RemminaFile* remminafile, const char *remm
 		if (!error)
 		{
 			gtk_spinner_start (GTK_SPINNER (pcspinner->spinner));
-			g_child_watch_add (child_pid, wait_for_child, (gpointer) pcspinner);
+			g_child_watch_add (child_pid,
+					remmina_plugin_cmdexec_spinner,
+					(gpointer) pcspinner);
 			gtk_dialog_run(pcspinner->dialog);
 		}
 		else
