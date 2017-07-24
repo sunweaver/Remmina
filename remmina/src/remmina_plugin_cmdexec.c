@@ -116,6 +116,7 @@ GtkDialog* remmina_plugin_cmdexec_new(RemminaFile* remminafile, const char *remm
 		                argv,                      // argv
 		                NULL,                      // envp
 		                G_SPAWN_SEARCH_PATH |
+				G_SPAWN_SEARCH_PATH_FROM_ENVP |
 		                G_SPAWN_DO_NOT_REAP_CHILD, // flags
 		                NULL,                      // child_setup
 		                NULL,                      // child_setup user data
