@@ -41,6 +41,7 @@
 #include "remmina_file.h"
 #include "remmina_plugin_cmdexec.h"
 #include "remmina_public.h"
+#include "remmina_string_array.h"
 #include "remmina/remmina_trace_calls.h"
 
 #define GET_OBJECT(object_name) gtk_builder_get_object(builder, object_name)
@@ -63,10 +64,9 @@ GtkDialog* remmina_plugin_cmdexec_new(RemminaFile* remminafile, const char *remm
 	PCon_Spinner *pcspinner;
 	GError *error = NULL;
 	char **argv;
-	char const *plugin_cmd = NULL;
+	gchar const *plugin_cmd = NULL;
 	gchar pre[11];
 	gchar post[12];
-	char const *cmd = NULL;
 	GPid child_pid;
 
 	strcpy(pre, "precommand");
@@ -83,13 +83,8 @@ GtkDialog* remmina_plugin_cmdexec_new(RemminaFile* remminafile, const char *remm
 
 	if (plugin_cmd != NULL)
 	{
-		cmd = g_shell_quote(remmina_file_get_string(remminafile,
-					remmina_plugin_cmdexec_type));
-		g_shell_parse_argv (remmina_file_get_string(remminafile,
-					remmina_plugin_cmdexec_type),
-				NULL,
-				&argv,
-				&error);
+		g_shell_parse_argv (plugin_cmd, NULL, &argv, &error);
+
 		pcspinner = g_new(PCon_Spinner, 1);
 		builder = remmina_public_gtk_builder_new_from_file("remmina_spinner.glade");
 		pcspinner->dialog = GTK_DIALOG(gtk_builder_get_object(builder, "DialogSpinner"));
@@ -100,18 +95,12 @@ GtkDialog* remmina_plugin_cmdexec_new(RemminaFile* remminafile, const char *remm
 		gtk_builder_connect_signals(builder, NULL);
 
 		/* Exec a predefined command */
-#ifdef g_info
-		/* g_info available since glib 2.4 */
-		g_info("Spawning \"%s\"...", cmd);
-#endif
-
 		if (error)
 		{
 			g_warning ("%s\n", error->message);
 			g_error_free(error);
 		}
 
-		/* Consider using G_SPAWN_SEARCH_PATH_FROM_ENVP (from glib 2.38)*/
 		g_spawn_async(	NULL,                      // cwd
 		                argv,                      // argv
 		                NULL,                      // envp
