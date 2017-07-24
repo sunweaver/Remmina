@@ -83,7 +83,13 @@ GtkDialog* remmina_plugin_cmdexec_new(RemminaFile* remminafile, const char *remm
 
 	if (plugin_cmd != NULL)
 	{
-		cmd = g_shell_quote(remmina_file_get_string(remminafile, remmina_plugin_cmdexec_type));
+		cmd = g_shell_quote(remmina_file_get_string(remminafile,
+					remmina_plugin_cmdexec_type));
+		g_shell_parse_argv (remmina_file_get_string(remminafile,
+					remmina_plugin_cmdexec_type),
+				NULL,
+				&argv,
+				&error);
 		pcspinner = g_new(PCon_Spinner, 1);
 		builder = remmina_public_gtk_builder_new_from_file("remmina_spinner.glade");
 		pcspinner->dialog = GTK_DIALOG(gtk_builder_get_object(builder, "DialogSpinner"));
@@ -98,7 +104,6 @@ GtkDialog* remmina_plugin_cmdexec_new(RemminaFile* remminafile, const char *remm
 		/* g_info available since glib 2.4 */
 		g_info("Spawning \"%s\"...", cmd);
 #endif
-		g_shell_parse_argv(cmd, NULL, &argv, &error);
 
 		if (error)
 		{
