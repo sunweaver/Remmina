@@ -62,7 +62,7 @@ endif()
 
 add_subdirectory(xdmcp)
 
-# X2GO
+# X2Go
 find_program(PYHOCA_EXECUTABLE pyhoca-cli)
 
 # FIXME: pyhoca-cli is a run-time dependency, not relevant at build-time
@@ -70,7 +70,7 @@ if(PYHOCA_EXECUTABLE)
 	message(STATUS "pyhoca-cli was found. The X2Go plugin will be installed")
 	add_subdirectory(x2go)
 else()
-	message(WARNING "pyhoca-cli was not found. X2GO Plugin won't be built")
+	message(WARNING "pyhoca-cli was not found. X2Go plugin won't be built")
 endif()
 
 find_suggested_package(FREERDP)
